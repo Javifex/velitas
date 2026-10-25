@@ -52,6 +52,14 @@ function checkedMoney(value, label) {
   return value;
 }
 
+export function costForQuantity(value, mode = 'batch', quantity, label = 'Costo') {
+  if (mode !== 'batch' && mode !== 'unit') throw new Error(`${label}: elige un costo por vela o por lote.`);
+  const count = parseNumber(quantity, 'Cantidad', { integer: true, positive: true });
+  if (count > 100_000) throw new Error('Cantidad: el máximo es 100.000 velas.');
+  const amount = moneyToCents(value, label);
+  return checkedMoney(amount * (mode === 'unit' ? count : 1), label);
+}
+
 export function orderTotals(order) {
   const revenue = checkedMoney(order.totalPrice, 'Precio de venta');
   const cost = order.costs.reduce((sum, item) =>
@@ -77,7 +85,7 @@ export function calculateEstimate(input) {
     ['transport', 'Transportes'], ['dye', 'Colorante'], ['fragrance', 'Aromatizante'],
     ['wick', 'Pabilo'], ['molds', 'Moldes'],
   ]) {
-    costs.push({ id: key, label, amount: moneyToCents(input[key], label) });
+    costs.push({ id: key, label, amount: costForQuantity(input[key], input[`${key}Mode`], quantity, label) });
   }
   const revenue = checkedMoney(moneyToCents(input.salePerUnit, 'Precio por vela') * quantity, 'Venta total');
   const totals = orderTotals({ totalPrice: revenue, costs });

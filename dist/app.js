@@ -1,4 +1,4 @@
-import { STATUS_LABELS, parseNumber, moneyToCents, calculateEstimate, orderTotals, validateOrder } from './domain.js';
+import { STATUS_LABELS, parseNumber, moneyToCents, costForQuantity, calculateEstimate, orderTotals, validateOrder } from './domain.js';
 import { STORAGE_KEY, loadOrders, saveOrders, exportBackup, importBackup } from './storage.js';
 
 const paths = {
@@ -133,9 +133,15 @@ function numericField(name, label, value, unit = 'COP', hint = '', placeholder =
   return `<label class="field"><span>${label}</span><span class="input-unit">${unit === 'COP' ? '<span class="prefix">$</span>' : ''}<input name="${name}" type="text" inputmode="decimal" autocomplete="off" maxlength="20" value="${escapeHTML(value)}" placeholder="${placeholder}" ${required ? 'required' : ''}><span>${unit}</span></span>${hint ? `<small>${hint}</small>` : ''}</label>`;
 }
 
+function costField(name, label, value, mode = 'batch', hint = '', required = false) {
+  const id = `cost-${crypto.randomUUID()}`;
+  const perUnit = mode === 'unit';
+  return `<div class="field cost-field"><label for="${id}">${escapeHTML(label)}</label><div class="input-unit"><span class="prefix">$</span><input id="${id}" name="${name}" type="text" inputmode="decimal" autocomplete="off" maxlength="20" value="${escapeHTML(value)}" placeholder="0" ${required ? 'required' : ''}><input type="hidden" name="${name}Mode" value="${mode}"><button type="button" class="cost-mode ${perUnit ? 'active' : ''}" data-action="cost-mode" data-label="${escapeHTML(label)}" aria-pressed="${perUnit}" aria-label="${escapeHTML(label)}: ${perUnit ? 'Por vela' : 'Por lote'}. Cambiar modo">${perUnit ? 'Por vela' : 'Por lote'}</button></div>${hint ? `<small>${hint}</small>` : ''}</div>`;
+}
+
 function renderCalculator() {
   main.innerHTML = `${heading('Calculadora de costos', 'ANTES DE ENCENDER LA PRIMERA VELA', 'Cada ingrediente cuenta. Dale valor a lo que creas.', '<button class="button secondary" data-action="reset-calc">Limpiar</button>', 'estimate-heading')}
-    <div class="calc-intro">${icon('info')}<span>La cera se calcula según los gramos de cada vela. Los demás valores corresponden al <strong>lote completo</strong>. Escribe los importes sin puntos de miles; puedes usar coma decimal.</span></div>
+    <div class="calc-intro">${icon('info')}<span>En cada material, toca <strong>Por lote</strong> o <strong>Por vela</strong> para cambiar cómo se calcula el importe. Por vela se multiplica por la cantidad. Escribe valores en COP sin puntos de miles; puedes usar coma decimal.</span></div>
     <div class="estimate-layout"><form id="calc-form" class="estimate-columns" novalidate>
       <section class="panel"><div class="panel-heading"><h2><span class="number">01</span>Tu próximo lote</h2><span class="muted">${icon('candle')}</span></div><div class="form-grid">
         ${numericField('quantity', 'Cantidad de velas', calcDraft.quantity, 'und.', '', 'Ej. 20', true)}
@@ -144,12 +150,12 @@ function renderCalculator() {
         ${numericField('salePerUnit', 'Precio de venta por vela', calcDraft.salePerUnit, 'COP', 'Opcional, para estimar tu ganancia', 'Ej. 15000')}
       </div><p class="field-note">Cera del lote = (gramos por vela × cantidad ÷ 1.000) × costo del kilo.</p></section>
       <section class="panel"><div class="panel-heading"><h2><span class="number">02</span>Los ingredientes del costo</h2></div><div class="material-grid">
-        ${numericField('transport', `${icon('truck')} Transportes`, calcDraft.transport, 'COP', 'Transporte de insumos y entregas')}
-        ${numericField('dye', `${icon('palette')} Colorante`, calcDraft.dye, 'COP', 'Costo de la cantidad que usarás')}
-        ${numericField('fragrance', `${icon('flower')} Aromatizante`, calcDraft.fragrance, 'COP', 'Esencia para todas las velas')}
-        ${numericField('wick', `${icon('candle')} Pabilo`, calcDraft.wick, 'COP', 'Pabilos para el lote completo')}
-        ${numericField('molds', `${icon('box')} Moldes`, calcDraft.molds, 'COP', 'Costo de uso asignado a este lote')}
-      </div><p class="field-note">¿Empaques, mano de obra u otro gasto? Puedes añadirlos al crear el pedido. En moldes incluye solo el valor que quieras recuperar con este lote.</p></section>
+        ${costField('transport', 'Transportes', calcDraft.transport, calcDraft.transportMode, 'Transporte de insumos y entregas')}
+        ${costField('dye', 'Colorante', calcDraft.dye, calcDraft.dyeMode, 'Colorante que usarás')}
+        ${costField('fragrance', 'Aromatizante', calcDraft.fragrance, calcDraft.fragranceMode, 'Esencia o fragancia')}
+        ${costField('wick', 'Pabilo', calcDraft.wick, calcDraft.wickMode, 'Mechas o pabilos')}
+        ${costField('molds', 'Moldes', calcDraft.molds, calcDraft.moldsMode, 'Costo de uso del molde')}
+      </div><p class="field-note">Cambiar el botón conserva el importe escrito y cambia su cálculo. ¿Empaques o mano de obra? Puedes añadirlos al pedido. En moldes incluye solo el costo de uso que quieras recuperar.</p></section>
     </form><aside class="panel summary" aria-label="Resultado del cálculo" id="estimate-result" aria-live="polite"></aside></div>`;
   updateEstimate();
 }
@@ -185,7 +191,7 @@ function renderDetail(order) {
       <section class="panel"><div class="panel-heading"><h2>Costos de ejecución</h2><small>${order.costs.length} concepto${order.costs.length === 1 ? '' : 's'}</small></div>
       ${order.costs.length ? order.costs.map(item => `<div class="cost-line"><span class="cost-icon">${icon(item.id === 'cera' ? 'drop' : 'box')}</span><span class="cost-name">${escapeHTML(item.label)}</span><strong>${money(item.amount)}</strong><button class="remove-cost" data-action="edit-cost" data-cost="${escapeHTML(item.id)}" aria-label="Editar costo ${escapeHTML(item.label)}">${icon('edit')}</button><button class="remove-cost" data-action="remove-cost" data-cost="${escapeHTML(item.id)}" aria-label="Eliminar costo ${escapeHTML(item.label)}">${icon('trash')}</button></div>`).join('') : '<p class="details-notes">Aún no has registrado costos. Añade los materiales, empaques y tu tiempo de trabajo.</p>'}
       <div class="cost-total"><span>Costo total del pedido</span><strong>${money(totals.cost)}</strong></div>
-      <form id="add-cost-form" class="add-cost-form"><label class="field"><span>Nuevo concepto</span><input name="label" placeholder="Ej. Empaques" maxlength="100" required></label><label class="field"><span>Valor total (COP)</span><input name="amount" type="text" inputmode="decimal" placeholder="Ej. 5000" maxlength="20" required></label><button class="button primary" aria-label="Añadir costo">${icon('plus')}</button></form><p id="cost-error" class="inline-message form-error" role="alert"></p>
+      <form id="add-cost-form" class="add-cost-form"><label class="field"><span>Nuevo concepto</span><input name="label" placeholder="Ej. Empaques" maxlength="100" required></label>${costField('amount', 'Valor (COP)', '', 'batch', '', true)}<button class="button primary" aria-label="Añadir costo">${icon('plus')}</button></form><p class="cost-entry-note">Por vela multiplica el importe por las ${number(order.quantity)} velas. Por lote lo suma una vez.</p><p id="cost-error" class="inline-message form-error" role="alert"></p>
       </section>${order.notes ? `<section class="panel"><div class="panel-heading"><h2>Notas del pedido</h2></div><p class="details-notes">${escapeHTML(order.notes)}</p></section>` : ''}
       <div class="danger-zone"><button class="button ghost loss" data-action="delete-order">${icon('trash')}Eliminar pedido</button></div></div>
       <aside class="panel summary"><div class="eyebrow">EL VALOR DE TU TRABAJO</div><h2>Resumen del pedido</h2><p class="summary-note" style="text-align:left">Precio de venta total</p><div class="big-total">${money(order.totalPrice)}</div><p class="per-unit">${money(Math.round(order.totalPrice / order.quantity))} por vela · ${number(order.quantity)} unidades</p><div class="divider"></div>
@@ -241,7 +247,7 @@ function backupModal() {
     <div class="backup-option"><h3>Guarda una copia de tus pedidos</h3><p>Descarga un archivo y guárdalo en Archivos o en tu Drive. Incluye clientes, costos y notas.</p><button class="button secondary" data-action="export" ${locked ? 'disabled' : ''}>${icon('download')}Exportar respaldo · ${orders.length} pedidos</button>${locked ? `<button class="button secondary" data-action="export-raw">${icon('download')}Descargar datos originales</button>` : ''}</div>
     <div class="backup-option"><h3>Restaurar un respaldo</h3><p>Elige un archivo de Velitas. Podrás revisar cuántos pedidos contiene antes de reemplazar los actuales.</p><label class="field"><span>Archivo de respaldo (.json)</span><input class="file-input" id="backup-file" type="file" accept=".json,application/json"></label><p id="backup-error" class="inline-message form-error" role="alert"></p></div>
     <div class="backup-option"><h3>Instala Velitas en tu iPhone</h3><ol class="install-steps"><li>Abre este enlace en <strong>Safari</strong>.</li><li>Toca <strong>Compartir</strong> y <strong>Agregar a pantalla de inicio</strong>.</li><li>Abre Velitas desde su icono y crea allí tus pedidos.</li></ol><p id="offline-status">${offlineMessage()}</p>${deferredInstall ? '<button class="button secondary" data-action="install">Instalar en este dispositivo</button>' : ''}</div>
-    <p class="backup-warning">Haz una copia antes de cambiar de teléfono, borrar los datos del navegador o cambiar de dirección web. Safari y el icono instalado pueden tener almacenamiento separado. No hay sincronización automática.</p><p class="summary-note">Velitas 1.0.0 · Valores en pesos colombianos (COP)</p>`);
+    <p class="backup-warning">Haz una copia antes de cambiar de teléfono, borrar los datos del navegador o cambiar de dirección web. Safari y el icono instalado pueden tener almacenamiento separado. No hay sincronización automática.</p><p class="summary-note">Velitas 1.1.0 · Valores en pesos colombianos (COP)</p>`);
 }
 function offlineMessage() { return navigator.serviceWorker?.controller ? 'Disponible sin conexión en este dispositivo.' : 'La descarga para uso sin conexión se completa al cargar la app. Si es la primera visita, vuelve a abrirla con internet.'; }
 function download(text, filename) {
@@ -268,6 +274,17 @@ document.addEventListener('click', async event => {
       case 'filter': filter = target.dataset.filter; updateOrderList(); break;
       case 'clear-search': search = ''; filter = 'todos'; renderOrders(); $('#order-search').focus(); break;
       case 'reset-calc': calcDraft = initialDraft(); renderCalculator(); break;
+      case 'cost-mode': {
+        const modeInput = target.closest('.cost-field').querySelector('input[type="hidden"]');
+        const perUnit = modeInput.value !== 'unit';
+        modeInput.value = perUnit ? 'unit' : 'batch';
+        target.textContent = perUnit ? 'Por vela' : 'Por lote';
+        target.classList.toggle('active', perUnit);
+        target.setAttribute('aria-pressed', String(perUnit));
+        target.setAttribute('aria-label', `${target.dataset.label}: ${target.textContent}. Cambiar modo`);
+        if (target.closest('#calc-form')) { calcDraft = Object.fromEntries(new FormData($('#calc-form'))); updateEstimate(); }
+        break;
+      }
       case 'estimate-order': orderForm(null, currentEstimate()); break;
       case 'edit-order': if (order) orderForm(order); break;
       case 'status':
@@ -288,7 +305,7 @@ document.addEventListener('click', async event => {
         const cost = order?.costs.find(item => item.id === target.dataset.cost);
         if (cost) {
           modal.dataset.costId = cost.id;
-          openModal('Editar costo', `<form id="edit-cost-form"><div class="form-grid"><label class="field full"><span>Concepto</span><input name="label" value="${escapeHTML(cost.label)}" maxlength="100" required></label><label class="field full"><span>Valor total (COP)</span><input name="amount" inputmode="decimal" value="${rawMoney(cost.amount)}" maxlength="20" required><small>Sin puntos de miles. Puedes usar coma decimal.</small></label></div><p class="inline-message form-error" id="edit-cost-error" role="alert"></p><div class="modal-footer"><button type="button" class="button secondary" data-action="close-modal">Cancelar</button><button class="button primary">Guardar costo</button></div></form>`);
+          openModal('Editar costo', `<form id="edit-cost-form"><div class="form-grid"><label class="field full"><span>Concepto</span><input name="label" value="${escapeHTML(cost.label)}" maxlength="100" required></label>${costField('amount', 'Valor (COP)', rawMoney(cost.amount), 'batch', 'El importe guardado es el total del lote. Para usar Por vela, escribe el costo de una sola vela.', true)}</div><p class="cost-entry-note">Por vela multiplica por ${number(order.quantity)} velas; Por lote conserva el importe como total.</p><p class="inline-message form-error" id="edit-cost-error" role="alert"></p><div class="modal-footer"><button type="button" class="button secondary" data-action="close-modal">Cancelar</button><button class="button primary">Guardar costo</button></div></form>`);
         }
         break;
       }
@@ -341,7 +358,7 @@ document.addEventListener('submit', event => {
     } else {
       const order = selectedOrder();
       if (!order) throw new Error('No encontramos el pedido.');
-      const amount = moneyToCents(data.amount, 'Costo');
+      const amount = costForQuantity(data.amount, data.amountMode, order.quantity, 'Costo');
       if (!data.label.trim()) throw new Error('Escribe el nombre del costo.');
       const costs = form.id === 'add-cost-form' ? [...order.costs, { id: crypto.randomUUID(), label: data.label.trim(), amount }]
         : order.costs.map(cost => cost.id === modal.dataset.costId ? { ...cost, label: data.label.trim(), amount } : cost);

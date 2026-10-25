@@ -1,4 +1,4 @@
-# Velitas 1.0.0
+# Velitas 1.1.0
 
 App web instalable para llevar los pedidos y costos de un taller de velas. En español, sin registro, sin servidor de datos y sin dependencias de ejecución.
 
@@ -19,9 +19,9 @@ Cada dispositivo mantiene sus propios pedidos. El enlace permite acceder a la ap
 - Crear y buscar pedidos por cliente, incluyendo nombres con tildes.
 - Filtrar y cambiar entre Cotizando, Ejecutando y Completado.
 - Editar descripción, cantidad, venta total, fecha de entrega y notas.
-- Añadir, editar y eliminar costos, con confirmación antes de borrar.
+- Añadir, editar y eliminar costos, con confirmación antes de borrar. Al añadir o editar un costo puedes elegir Por vela o Por lote. Los costos se guardan como totales del lote; al volver a editarlos, se muestra Por lote para evitar multiplicarlos de nuevo. Los pedidos y respaldos anteriores conservan sus importes.
 - Ganancia = precio de venta total − suma de costos registrados. El margen usa el precio de venta como denominador.
-- Calcular cera por gramos por vela × cantidad ÷ 1.000 × costo del kilo. Transportes, colorante, aromatizante, pabilo y moldes son importes del lote completo. Para un molde reutilizable, introduce el costo de uso que asignas a ese lote.
+- Calcular cera por gramos por vela × cantidad ÷ 1.000 × costo del kilo. Transportes, colorante, aromatizante, pabilo y moldes tienen un botón «Por lote / Por vela». Por lote suma el importe una vez; Por vela lo multiplica por la cantidad. Por ejemplo, 100 COP por vela para 10 velas suma 1.000 COP. El importe escrito no cambia al alternar el botón. Para moldes reutilizables, introduce el costo de uso que quieres recuperar.
 - Crear un pedido a partir de la cotización. Cambiar su cantidad después no recalcula los costos ni el precio; se conserva lo registrado y se informa en el formulario.
 - Empaques, mano de obra y otros costos se pueden agregar al pedido.
 - Respaldo/restauración con validación, sin reemplazo silencioso de datos dañados.

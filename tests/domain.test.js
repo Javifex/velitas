@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateEstimate, moneyToCents, orderTotals, parseNumber, validateOrder } from '../dist/domain.js';
+import { calculateEstimate, costForQuantity, moneyToCents, orderTotals, parseNumber, validateOrder } from '../dist/domain.js';
 import { exportBackup, importBackup, loadOrders, saveOrders, STORAGE_KEY } from '../dist/storage.js';
 
 const estimate = (overrides = {}) => calculateEstimate({ quantity: '10', gramsPerUnit: '125',
@@ -36,6 +36,47 @@ test('a 10-candle lot uses 1.25 kg of wax and adds all extras once per lot', () 
   assert.equal(result.revenue, 10_000_000);
   assert.equal(result.profit, 6_000_000);
   assert.equal(result.margin, 60);
+});
+
+test('100 COP per candle becomes 1000 COP for ten; batch and default stay at 100 COP', () => {
+  assert.equal(costForQuantity('100', 'unit', '10'), 100_000);
+  assert.equal(costForQuantity('100', 'batch', 10), 10_000);
+  assert.equal(costForQuantity('100', undefined, 10), 10_000);
+  assert.equal(costForQuantity('0,29', 'unit', 10), 290);
+  assert.equal(costForQuantity('', 'unit', 10), 0);
+});
+
+test('material modes are independent and changing quantity scales only unit costs and wax', () => {
+  const input = { dye: '100', dyeMode: 'unit', fragrance: '0,29', fragranceMode: 'unit',
+    molds: '400', moldsMode: 'unit' };
+  const ten = estimate(input);
+  const twenty = estimate({ ...input, quantity: '20' });
+  assert.deepEqual(ten.costs.map(cost => cost.amount), [2_500_000, 500_000, 100_000, 290, 200_000, 400_000]);
+  assert.equal(ten.totalCost, 3_700_290);
+  assert.equal(ten.profit, 6_299_710);
+  assert.deepEqual(twenty.costs.map(cost => cost.amount), [5_000_000, 500_000, 200_000, 580, 200_000, 800_000]);
+  for (const key of ['transport', 'dye', 'fragrance', 'wick', 'molds']) {
+    const result = estimate({ [key]: '100', [`${key}Mode`]: 'unit' });
+    assert.equal(result.costs.find(cost => cost.id === key).amount, 100_000);
+  }
+  const transferred = validateOrder(order({ costs: ten.costs }));
+  const restored = importBackup(exportBackup([transferred]))[0];
+  assert.equal(orderTotals(restored).cost, ten.totalCost);
+  assert.deepEqual(restored.costs, ten.costs);
+});
+
+test('material cost modes reject invalid quantities, modes and multiplied amounts beyond the limit', () => {
+  for (const mode of [null, '', 'individual', true, 1, {}, []]) {
+    assert.throws(() => costForQuantity('100', mode, 10));
+    assert.throws(() => estimate({ dyeMode: mode }));
+  }
+  for (const quantity of [0, -1, '1.5', '1.000000000000000001', 100001, undefined]) {
+    assert.throws(() => costForQuantity('100', 'unit', quantity));
+    assert.throws(() => costForQuantity('100', 'batch', quantity));
+  }
+  assert.equal(costForQuantity('100000000000', 'unit', 10), 100_000_000_000_000);
+  assert.throws(() => costForQuantity('100000000000.01', 'unit', 10));
+  assert.throws(() => estimate({ transport: '1000000000000', transportMode: 'unit' }));
 });
 
 test('decimal limits and integer quantities are checked before floating-point rounding', () => {

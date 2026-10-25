@@ -19,7 +19,7 @@ test('offline navigation serves the cached root without depending on an index.ht
     caches: {
       open: async () => ({ addAll: async assets => { precached = Array.from(assets); } }),
       match: async key => { cacheLookups.push(key); return key === './' ? home : undefined; },
-      keys: async () => ['velitas-0.9.0', 'another-app', 'velitas-1.0.0-r3'],
+      keys: async () => ['velitas-0.9.0', 'another-app', 'velitas-1.1.0'],
       delete: async key => { deleted.push(key); },
     },
     fetch: async () => { throw new TypeError('Network unavailable'); },
