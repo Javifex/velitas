@@ -38,7 +38,7 @@ const currencyWithCents = new Intl.NumberFormat('es-CO', { style: 'currency', cu
 const money = cents => (cents % 100 ? currencyWithCents : currency).format(cents / 100);
 const rawMoney = cents => String(cents / 100);
 const number = value => new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 }).format(value);
-const dateLabel = date => new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${date}T12:00:00`));
+const dateLabel = date => new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(date.length === 10 ? `${date}T12:00:00` : date));
 const normalized = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es').trim();
 const initialDraft = () => ({ quantity: '1', gramsPerUnit: '', waxPricePerKg: '', transport: '', dye: '', fragrance: '', wick: '', molds: '', salePerUnit: '' });
 let orders = [], locked = false, snapshot = null, search = '', filter = 'todos', calcDraft = initialDraft(), toastTimer, deferredInstall;
@@ -179,7 +179,7 @@ function renderDetail(order) {
   main.innerHTML = `<a href="#pedidos" class="back-link">${icon('back')}Volver a mis pedidos</a>
     ${heading(escapeHTML(order.client), 'LOS DETALLES HACEN LA DIFERENCIA', escapeHTML(order.description || `${order.quantity} vela${order.quantity === 1 ? '' : 's'} hechas con cariño`), `<button class="button secondary" data-action="edit-order">${icon('edit')}Editar pedido</button>`, 'detail-heading detail-title')}
     <div class="detail-grid"><div><section class="panel"><div class="panel-heading"><h2>Así va este pedido</h2>${statusBadge(order.status)}</div>
-      <div class="order-meta"><span>${number(order.quantity)} vela${order.quantity === 1 ? '' : 's'}</span><span>Creado ${dateLabel(order.createdAt.slice(0, 10))}</span>${order.dueDate ? `<span class="date-chip">Entrega ${dateLabel(order.dueDate)}</span>` : ''}</div>
+      <div class="order-meta"><span>${number(order.quantity)} vela${order.quantity === 1 ? '' : 's'}</span><span>Creado ${dateLabel(order.createdAt)}</span>${order.dueDate ? `<span class="date-chip">Entrega ${dateLabel(order.dueDate)}</span>` : ''}</div>
       <div class="status-control"><span>Estado actual · toca para cambiar</span><div class="status-steps" aria-label="Estado del pedido">${Object.entries(STATUS_LABELS).map(([key, label]) => `<button data-action="status" data-status="${key}" class="${key === order.status ? 'active' : ''}" aria-pressed="${key === order.status}">${label}</button>`).join('')}</div></div>
       <div class="save-indicator">${icon('check')}Guardado en este dispositivo</div></section>
       <section class="panel"><div class="panel-heading"><h2>Costos de ejecución</h2><small>${order.costs.length} concepto${order.costs.length === 1 ? '' : 's'}</small></div>
