@@ -2,6 +2,8 @@
 
 App web instalable para llevar los pedidos y costos de un taller de velas. En español, sin registro, sin servidor de datos y sin dependencias de ejecución.
 
+**Abrir la app:** https://javifex.github.io/velitas/
+
 ## Uso en iPhone
 
 1. Abre la dirección HTTPS publicada en Safari.
@@ -36,6 +38,16 @@ npm start
 ```
 
 Abre http://localhost:4173. El servidor local solo escucha en este equipo. Para usar el modo sin conexión en el teléfono se requiere la dirección HTTPS publicada, no un archivo HTML abierto desde Archivos. Publica el contenido de `dist/` en un servidor estático HTTPS que sirva `.js`, `.webmanifest`, imágenes y `sw.js` correctamente. El service worker usa un caché versionado: al actualizar recursos, incrementa la versión en package.json, app.js, index.html y sw.js.
+
+## Publicación en GitHub Pages
+
+El repositorio público es https://github.com/Javifex/velitas. GitHub Pages publica el contenido de `dist/` mediante `.github/workflows/pages.yml`. Cada actualización de `main` ejecuta las pruebas y solo publica si pasan. También se puede ejecutar el flujo desde la pestaña Actions. No requiere secretos ni instalar dependencias.
+
+En Settings → Pages, la fuente debe ser **GitHub Actions**. La app usa rutas relativas y funciona bajo `/velitas/`, incluyendo el icono instalado y el modo sin conexión. No se publican respaldos ni pedidos personales: estos se guardan únicamente en el dispositivo.
+
+Si ya usaste la dirección anterior de Velitas, exporta un respaldo allí y restáuralo en la dirección de GitHub antes de continuar. Cambiar la dirección no traslada automáticamente los pedidos. Instala el nuevo enlace desde Safari y comprueba el respaldo desde ese icono antes de retirar el anterior.
+
+GitHub Pages está disponible gratis para repositorios públicos. Esta edición personal no procesa cobros ni ofrece un servicio comercial. Antes de ofrecer la app como SaaS de pago, debe trasladarse a un alojamiento que permita ese uso: https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits.
 
 ## Base para una edición comercial
 
