@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f8f6f2">
+  <meta name="description" content="Tu taller de velitas en orden. Calcula costos, organiza pedidos y conoce tu ganancia, sin registro.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Velitas">
+  <meta name="color-scheme" content="light">
+  <title>Velitas · Tu taller en orden</title>
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Ir al contenido</a>
+  <aside class="sidebar">
+    <a href="#pedidos" class="brand" aria-label="Velitas, ir a pedidos"><span class="brand-mark" aria-hidden="true">♨</span><span>velitas<span class="brand-dot">.</span><small>TU TALLER EN ORDEN</small></span></a>
+    <div class="nav-label">MI NEGOCIO</div>
+    <nav class="desktop-nav" aria-label="Navegación principal">
+      <a href="#pedidos" data-nav="pedidos"><span data-icon="orders"></span>Pedidos<span class="nav-count" id="nav-count">0</span></a>
+      <a href="#costos" data-nav="costos"><span data-icon="calculator"></span>Calculadora de costos</a>
+    </nav>
+    <div class="sidebar-note"><span data-icon="sparkles"></span><p>Hecho a mano,<br><strong>con cuentas claras.</strong></p><span class="note-line"></span><small>Más tiempo para crear.<br>Menos cuentas por hacer.</small></div>
+    <button class="sidebar-backup" data-action="backup"><span data-icon="shield"></span>Mis datos y respaldo</button>
+    <div class="sidebar-version">VELITAS <span>v1.0.0</span></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar">
+      <a href="#pedidos" class="mobile-brand">velitas<span>.</span></a>
+      <span class="breadcrumb">Mi taller <span>/</span> <strong id="breadcrumb">Pedidos</strong></span>
+      <div class="topbar-right"><span id="connection" class="connection"><i></i>Solo en este dispositivo</span><button class="icon-button mobile-backup" data-action="backup" aria-label="Mis datos y respaldo"><span data-icon="shield"></span></button><span class="avatar" aria-hidden="true">V</span></div>
+    </header>
+    <div id="storage-alert" class="alert" hidden></div>
+    <main id="main" tabindex="-1"></main>
+    <footer class="page-footer"><span>Un poquito de orden. Mucha luz.</span><span>Hecho para tu taller <span aria-hidden="true">✧</span></span></footer>
+  </div>
+  <nav class="bottom-nav" aria-label="Navegación móvil"><a href="#pedidos" data-nav="pedidos"><span data-icon="orders"></span>Pedidos</a><a href="#costos" data-nav="costos"><span data-icon="calculator"></span>Calcular costos</a></nav>
+  <dialog id="modal" aria-labelledby="modal-title"><div id="modal-content"></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <noscript><div class="alert">Activa JavaScript en Safari para usar Velitas. Los cálculos y los pedidos se guardan en tu teléfono.</div></noscript>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "Velitas · Tu taller en orden",
+  "short_name": "Velitas",
+  "description": "Calcula tus costos, organiza pedidos y conoce tu ganancia.",
+  "lang": "es-CO",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8f6f2",
+  "theme_color": "#f8f6f2",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

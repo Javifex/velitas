@@ -1,0 +1,12 @@
+{
+  "name": "velitas",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pedidos y costos de fabricación de velas, sin registro.",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "test": "node --test tests/*.test.js",
+    "check": "node scripts/check.mjs && node --test tests/*.test.js"
+  }
+}
