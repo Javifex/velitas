@@ -14,7 +14,8 @@ const sw = readFileSync('dist/sw.js', 'utf8');
 assert(sw.includes(`velitas-${pkg.version}`), 'Versión del caché incoherente');
 const assets = [...sw.matchAll(/'\.\/([^']*)'/g)].map(match => match[1]).filter(Boolean);
 for (const asset of assets) assert(existsSync(`dist/${asset}`), `Falta recurso sin conexión: ${asset}`);
-for (const file of ['index.html', 'app.js', 'domain.js', 'storage.js', 'styles.css', 'manifest.webmanifest']) {
+assert(sw.includes("'./'"), 'Falta el documento principal sin conexión');
+for (const file of ['app.js', 'domain.js', 'storage.js', 'styles.css', 'manifest.webmanifest']) {
   assert(assets.includes(file), `Recurso fuera del caché: ${file}`);
 }
 const html = readFileSync('dist/index.html', 'utf8');
